@@ -8,6 +8,33 @@ app = Flask(__name__)
 app.secret_key = "super-secret-key-change-this"   # change for production
 
 
+def get_recommendation(notes):
+    if not notes:
+        return "No recommendation"
+
+    notes = notes.lower()
+
+    recommendations = {
+        "cold": "Prescribe antihistamines and rest.",
+        "fever": "Give paracetamol and monitor temperature.",
+        "fracture": "Immobilize limb and send for X-ray.",
+        "bleeding": "Apply pressure dressing and evaluate for transfusion.",
+        "infection": "Start IV antibiotics immediately.",
+        "asthma": "Use nebulizer bronchodilator and monitor breathing.",
+        "heart attack": "Administer aspirin and prepare ECG & oxygen.",
+        "burn": "Cool area with saline and apply sterile burn dressing.",
+        "stroke": "Immediate CT scan and stroke protocol activation.",
+        "covid": "Isolate patient, oxygen support, antiviral therapy."
+    }
+
+    for keyword, response in recommendations.items():
+        if keyword in notes:
+            return response
+
+    return "No recommendation available"
+
+
+
 # ------------- DB HELPERS -------------
 def get_db():
     conn = sqlite3.connect("emergency.db", check_same_thread=False)
@@ -233,11 +260,18 @@ def dashboard():
     )
     patients = cur.fetchall()
 
+    patients = [dict(row) for row in patients]  # Convert rows to editable dicts
+
+    for p in patients:
+        p["recommendation"] = get_recommendation(p.get("notes"))
+
+
     # Analytics data
     cur.execute("SELECT priority, COUNT(*) AS count FROM patients GROUP BY priority")
     raw = cur.fetchall()
     priorities = [r["priority"] for r in raw]
     counts = [r["count"] for r in raw]
+
 
     conn.close()
 
