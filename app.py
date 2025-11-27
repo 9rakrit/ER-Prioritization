@@ -283,5 +283,49 @@ def dashboard():
     )
 
 
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import io
+from flask import send_file
+
+@app.route("/report/<int:patient_id>")
+def report(patient_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM patients WHERE id=?", (patient_id,))
+    p = cur.fetchone()
+    conn.close()
+
+    from reportlab.pdfgen import canvas
+    from flask import send_file
+    from triage import calculate_priority
+    from app import get_recommendation  # only if static rules exist
+
+    # Compute recommendation again
+    notes = p["notes"] or ""
+    recommendation = get_recommendation(notes) if notes else "No recommendation"
+
+    file_name = f"patient_{patient_id}_report.pdf"
+    pdf = canvas.Canvas(file_name)
+
+    pdf.drawString(50, 800, f"Patient Report - ID: {patient_id}")
+    pdf.drawString(50, 770, f"Name: {p['name']}")
+    pdf.drawString(50, 750, f"Heart Rate: {p['hr']}")
+    pdf.drawString(50, 730, f"Blood Pressure: {p['bp']}")
+    pdf.drawString(50, 710, f"Oxygen Level: {p['oxygen']}")
+    pdf.drawString(50, 690, f"Temperature: {p['temp']}")
+    pdf.drawString(50, 670, f"Priority: {p['priority']}")
+    pdf.drawString(50, 650, f"Surgery Required: {'Yes' if p['surgery_required'] else 'No'}")
+    pdf.drawString(50, 630, f"Notes: {notes}")
+    pdf.drawString(50, 610, f"Recommendation: {recommendation}")
+    pdf.drawString(50, 590, f"Time of Death: {p['time_of_death'] or '-'}")
+
+    pdf.save()
+    return send_file(file_name, as_attachment=True)
+
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
