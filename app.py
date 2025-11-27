@@ -297,31 +297,71 @@ def report(patient_id):
     conn.close()
 
     from reportlab.pdfgen import canvas
-    from flask import send_file
-    from triage import calculate_priority
-    from app import get_recommendation  # only if static rules exist
-
-    # Compute recommendation again
-    notes = p["notes"] or ""
-    recommendation = get_recommendation(notes) if notes else "No recommendation"
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
 
     file_name = f"patient_{patient_id}_report.pdf"
-    pdf = canvas.Canvas(file_name)
+    pdf = canvas.Canvas(file_name, pagesize=A4)
 
-    pdf.drawString(50, 800, f"Patient Report - ID: {patient_id}")
-    pdf.drawString(50, 770, f"Name: {p['name']}")
-    pdf.drawString(50, 750, f"Heart Rate: {p['hr']}")
-    pdf.drawString(50, 730, f"Blood Pressure: {p['bp']}")
-    pdf.drawString(50, 710, f"Oxygen Level: {p['oxygen']}")
-    pdf.drawString(50, 690, f"Temperature: {p['temp']}")
-    pdf.drawString(50, 670, f"Priority: {p['priority']}")
-    pdf.drawString(50, 650, f"Surgery Required: {'Yes' if p['surgery_required'] else 'No'}")
-    pdf.drawString(50, 630, f"Notes: {notes}")
-    pdf.drawString(50, 610, f"Recommendation: {recommendation}")
-    pdf.drawString(50, 590, f"Time of Death: {p['time_of_death'] or '-'}")
+    width, height = A4
+    pdf.setFont("Helvetica-Bold", 16)
+
+    # --- Header / Title ---
+    pdf.drawCentredString(width / 2, height - 2 * cm, "CITY HOSPITAL - Emergency & Trauma Unit")
+
+    pdf.setFont("Helvetica", 12)
+    pdf.drawCentredString(width / 2, height - 2.8 * cm, "Patient Medical Report")
+
+    # Horizontal line
+    pdf.setStrokeColor(colors.black)
+    pdf.line(2 * cm, height - 3.2 * cm, width - 2 * cm, height - 3.2 * cm)
+
+    # Patient Details Section
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(2 * cm, height - 4.2 * cm, "Patient Information:")
+    pdf.setFont("Helvetica", 11)
+
+    info_y = height - 5 * cm
+
+    pdf.drawString(2 * cm, info_y, f"Name: {p['name']}")
+    pdf.drawString(11 * cm, info_y, f"Priority: {p['priority']}")
+
+    pdf.drawString(2 * cm, info_y - 0.8 * cm, f"Heart Rate: {p['hr']} bpm")
+    pdf.drawString(11 * cm, info_y - 0.8 * cm, f"Oxygen Level: {p['oxygen']}%")
+
+    pdf.drawString(2 * cm, info_y - 1.6 * cm, f"Blood Pressure: {p['bp']}")
+    pdf.drawString(11 * cm, info_y - 1.6 * cm, f"Temperature: {p['temp']}°C")
+
+    pdf.drawString(2 * cm, info_y - 2.4 * cm, f"Surgery Required: {'Yes' if p['surgery_required'] else 'No'}")
+    pdf.drawString(11 * cm, info_y - 2.4 * cm, f"Time of Death: {p['time_of_death'] or '-'}")
+
+    # Notes and Recommendation
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(2 * cm, info_y - 3.8 * cm, "Clinical Notes:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(2 * cm, info_y - 4.6 * cm, p["notes"] or "-")
+
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(2 * cm, info_y - 6 * cm, "Doctor Recommendation:")
+
+    from app import get_recommendation
+    recommendation = get_recommendation(p["notes"]) if p["notes"] else "No recommendation"
+
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(2 * cm, info_y - 6.8 * cm, recommendation)
+
+    # Signature section
+    pdf.line(2 * cm, 3 * cm, 8 * cm, 3 * cm)
+    pdf.drawString(2 * cm, 2.4 * cm, "Doctor Signature")
+
+    # Footer
+    pdf.setFont("Helvetica", 9)
+    pdf.drawCentredString(width / 2, 1.2 * cm, "System generated report - For clinical use only")
 
     pdf.save()
     return send_file(file_name, as_attachment=True)
+
 
 
 
