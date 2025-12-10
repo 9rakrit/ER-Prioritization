@@ -116,26 +116,4 @@ pytest
 * Harden input validation and error handling in `app.py`.
 * Add Dockerfile & CI (GitHub Actions) for reproducible deployments.
 
-If you'd like, open a PR with a clear description of changes. Keep commits small and tests green.
 
----
-
-## Security & privacy
-
-This repo may store sensitive demo data in `emergency.db`. Remove or sanitize any real personal data before sharing. If deploying publicly, add proper authentication, input sanitization, and secure storage.
-
----
-
-## License
-
-Specify a license (e.g., MIT) by adding a `LICENSE` file. If you want, I can add an MIT license text to the repo for you.
-
----
-
-## Contact / Author
-
-Repository: `9rakrit/ER-Prioritization` — reach out via GitHub issues or PRs for questions or feature requests.
-
----
-
-*Generated README — tell me if you want me to tweak the wording, add badges, or create a `LICENSE` file.*
